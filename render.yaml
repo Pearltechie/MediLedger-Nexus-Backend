@@ -1,0 +1,101 @@
+services:
+  # Main FastAPI Backend Service - Free Tier Optimized
+  - type: web
+    name: mediledger-nexus-api-free
+    env: python
+    plan: starter  # Free tier
+    buildCommand: |
+      python -m pip install --upgrade pip && \
+      pip install pydantic-settings==2.0.3 && \
+      pip install -r requirements.txt && \
+      pip list | grep pydantic && \
+      echo "Build command completed"
+    startCommand: |
+      ./start.sh
+    # Disable auto-detection
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: false
+      - key: LOG_LEVEL
+        value: INFO
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        fromService:
+          type: web
+          name: mediledger-nexus-api-free
+          property: port
+      # Use SQLite for free tier (no external database needed)
+      - key: DATABASE_URL
+        value: sqlite:///./mediledger_nexus.db
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ENCRYPTION_KEY
+        generateValue: true
+      # Disable heavy features for free tier
+      - key: ENABLE_ML_FEATURES
+        value: false
+      - key: ENABLE_AI_FEATURES
+        value: false
+      - key: ENABLE_BLOCKCHAIN_FEATURES
+        value: true
+      - key: WORKER_PROCESSES
+        value: 1
+      - key: MAX_CONCURRENT_REQUESTS
+        value: 10
+      # Hedera Configuration (optional for free tier)
+      - key: HEDERA_NETWORK
+        value: testnet
+      - key: HEDERA_ACCOUNT_ID
+        sync: false
+      - key: HEDERA_PRIVATE_KEY
+        sync: false
+      # Groq AI (lightweight)
+      - key: GROQ_API_KEY
+        sync: false
+      # CORS Configuration
+      - key: CORS_ORIGINS
+        value: "*"  # Allow all origins for free tier
+      - key: CORS_CREDENTIALS
+        value: true
+      - key: CORS_METHODS
+        value: GET,POST,PUT,DELETE,OPTIONS
+      - key: CORS_HEADERS
+        value: "*"
+    healthCheckPath: /health
+    autoDeploy: true
+    branch: main
+
+# Note: No Redis, PostgreSQL, or Celery services for free tier
+# These can be added when upgrading to paid plans
+
+# Optional: Static Site for frontend (if needed)
+# staticSites:
+#   - name: mediledger-frontend-free
+#     buildCommand: |
+#       npm install
+#       npm run build
+#     staticPublishPath: ./dist
+#     envVars:
+#       - key: VITE_API_URL
+#         fromService:
+#           type: web
+#           name: mediledger-nexus-api-free
+#           envVarKey: RENDER_EXTERNAL_URL
+#     routes:
+#       - type: rewrite
+#         source: /*
+#         destination: /index.html
+
+# Free Tier Limitations:
+# - 512MB RAM
+# - 0.1 vCPU
+# - 750 hours/month
+# - No external databases
+# - Single worker process
+# - Limited concurrent requests
