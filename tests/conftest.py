@@ -4,7 +4,8 @@ Pytest configuration and fixtures for MediLedger Nexus tests
 
 import asyncio
 import os
-from typing import AsyncGenerator, Generator
+from typing import Any, AsyncGenerator, Dict, Generator
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import pytest_asyncio
@@ -31,6 +32,111 @@ TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_eng
 TestAsyncSessionLocal = async_sessionmaker(
     test_async_engine, class_=AsyncSession, expire_on_commit=False
 )
+
+
+@pytest.fixture(autouse=True, scope="session")
+def mock_external_networks() -> Generator[Dict[str, Any], None, None]:
+    """Block Hedera and Groq network access for the entire test session.
+
+    The patches target the symbols where each service looks up its client,
+    rather than allowing a constructor to create a real SDK or HTTP client.
+    Every response is deterministic and shaped like the corresponding service
+    response so tests remain meaningful on a clean, offline machine.
+    """
+    hedera_client = MagicMock(name="offline_hedera_client")
+    hedera_client.account_id = "0.0.123456"
+    hedera_client.private_key = None
+    hedera_client.network = "testnet"
+    hedera_client.get_account_balance.return_value = {
+        "account_id": hedera_client.account_id,
+        "hbar_balance": 100.0,
+        "token_balances": {},
+        "timestamp": "2024-01-01T00:00:00Z",
+    }
+    hedera_client.get_account_info.return_value = {
+        "account_id": hedera_client.account_id,
+        "public_key": "offline-public-key",
+        "balance": 100.0,
+        "is_deleted": False,
+    }
+    hedera_client.create_topic.return_value = {
+        "topic_id": "0.0.789101",
+        "status": "created",
+    }
+    hedera_client.submit_message.return_value = {
+        "transaction_id": "0.0.123456@1234567890.123456789",
+        "status": "submitted",
+    }
+    hedera_client.create_token.return_value = {
+        "token_id": "0.0.345678",
+        "status": "created",
+    }
+    hedera_client.transfer_tokens.return_value = {
+        "transaction_id": "0.0.123456@1234567890.123456789",
+        "status": "success",
+    }
+    hedera_client.deploy_contract.return_value = {
+        "contract_id": "0.0.456789",
+        "transaction_id": "0.0.123456@1234567890.123456789",
+        "gas_used": 100000,
+        "cost_hbar": 0.1,
+        "status": "deployed",
+    }
+    hedera_client.call_contract_function.return_value = {
+        "transaction_id": "0.0.123456@1234567890.123456789",
+        "gas_used": 50000,
+        "status": "success",
+        "result": "offline_result",
+    }
+
+    groq_response: Dict[str, Any] = {
+        "id": "offline-completion",
+        "model": "offline-test-model",
+        "choices": [
+            {
+                "message": {
+                    "role": "assistant",
+                    "content": '{"diagnosis": "Offline test response", "confidence": 0.0}',
+                },
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": {
+            "prompt_tokens": 1,
+            "completion_tokens": 1,
+            "total_tokens": 2,
+        },
+    }
+
+    patches = [
+        patch(
+            "mediledger_nexus.blockchain.hedera_client.HederaClient",
+            return_value=hedera_client,
+        ),
+        patch(
+            "mediledger_nexus.blockchain.hts_service.HederaClient",
+            return_value=hedera_client,
+        ),
+        patch(
+            "mediledger_nexus.blockchain.hcs_service.HederaClient",
+            return_value=hedera_client,
+        ),
+        patch(
+            "mediledger_nexus.services.groq_ai.GroqAIService._make_request",
+            new_callable=AsyncMock,
+            return_value=groq_response,
+        ),
+    ]
+
+    started_patches = [network_patch.start() for network_patch in patches]
+    try:
+        yield {
+            "hedera_client": hedera_client,
+            "groq_request": started_patches[-1],
+        }
+    finally:
+        for network_patch in reversed(patches):
+            network_patch.stop()
 
 
 @pytest.fixture(scope="session")
