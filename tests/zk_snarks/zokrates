@@ -1,0 +1,11 @@
+#!/bin/bash
+# ZoKrates Docker wrapper script
+
+# Check if we're in a circuit directory
+if [ ! -f "circuit.zok" ] && [ ! -f "*.zok" ]; then
+    echo "⚠️  No .zok files found in current directory"
+    echo "Make sure you're in a directory with ZoKrates circuit files"
+fi
+
+# Run ZoKrates in Docker
+docker run --rm -v "$(pwd)":/workspace -w /workspace zokrates/zokrates:0.8.2 zokrates "$@"
