@@ -1,0 +1,129 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+solc = "0.8.19"
+optimizer = true
+optimizer_runs = 200
+via_ir = false
+verbosity = 1
+remappings = [
+    "forge-std/=lib/forge-std/src/",
+    "@openzeppelin/=lib/openzeppelin-contracts/",
+]
+
+# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+
+[profile.ci]
+fuzz = { runs = 10000 }
+invariant = { runs = 1000, depth = 15 }
+
+[profile.lite]
+optimizer = false
+fuzz = { runs = 10 }
+invariant = { runs = 10, depth = 5 }
+
+[profile.debug]
+debug = true
+optimizer = false
+optimizer_runs = 1
+via_ir = false
+
+[profile.release]
+optimizer = true
+optimizer_runs = 1000000
+via_ir = true
+
+# Gas reporting
+[profile.gas]
+optimizer = true
+optimizer_runs = 200
+gas_reports = ["*"]
+
+# Test configuration
+[profile.test]
+optimizer = true
+optimizer_runs = 200
+fuzz = { runs = 1000 }
+invariant = { runs = 100, depth = 10 }
+
+# Coverage configuration
+[profile.coverage]
+optimizer = true
+optimizer_runs = 200
+fuzz = { runs = 100 }
+invariant = { runs = 50, depth = 5 }
+
+# Etherscan configuration
+[etherscan]
+testnet = { key = "${ETHERSCAN_API_KEY}", url = "https://api-testnet.etherscan.io/" }
+mainnet = { key = "${ETHERSCAN_API_KEY}", url = "https://api.etherscan.io/" }
+
+# Hedera configuration
+[profile.hedera]
+testnet = { key = "${HEDERA_PRIVATE_KEY}", account_id = "${HEDERA_ACCOUNT_ID}" }
+mainnet = { key = "${HEDERA_PRIVATE_KEY}", account_id = "${HEDERA_ACCOUNT_ID}" }
+
+# RPC endpoints
+[rpc_endpoints]
+testnet = "https://testnet.hashio.io/api"
+mainnet = "https://mainnet.hashio.io/api"
+local = "http://localhost:7545"
+
+# Formatter configuration
+[fmt]
+line_length = 120
+tab_width = 4
+bracket_spacing = true
+int_types = "long"
+
+# Fuzz configuration
+[fuzz]
+runs = 1000
+max_test_rejects = 65536
+seed = '0x3e8'
+dictionary_weight = 40
+include_storage = true
+include_push_bytes = true
+
+# Invariant configuration
+[invariant]
+runs = 256
+depth = 15
+fail_on_revert = false
+call_override = false
+dictionary_weight = 40
+include_storage = true
+include_push_bytes = true
+
+# Gas configuration
+[gas]
+gas_reports = ["*"]
+gas_reports_ignore = ["test/", "script/", "lib/"]
+
+# Solidity configuration
+[profile.solidity]
+version = "0.8.19"
+optimizer = { enabled = true, runs = 200 }
+via_ir = false
+evm_version = "london"
+
+# Test configuration
+[test]
+verbosity = 2
+fuzz = { runs = 1000 }
+invariant = { runs = 100, depth = 10 }
+match_test = "test*"
+match_path = "test/**/*.sol"
+match_contract = "*Test*"
+
+# Script configuration
+[profile.script]
+verbosity = 2
+match_path = "script/**/*.sol"
+match_contract = "*Script*"
+
+# Deployment configuration
+[profile.deploy]
+testnet = { rpc_url = "https://testnet.hashio.io/api", private_key = "${HEDERA_PRIVATE_KEY}" }
+mainnet = { rpc_url = "https://mainnet.hashio.io/api", private_key = "${HEDERA_PRIVATE_KEY}" }
