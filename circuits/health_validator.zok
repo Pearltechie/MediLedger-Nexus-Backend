@@ -1,0 +1,21 @@
+// Health Data Validator Circuit
+// Proves health data is within safe ranges without revealing actual values
+
+def main(private u32 age, private u32 systolic, private u32 diastolic, private u32 heart_rate, private u32 temp, public u32 min_age, public u32 max_age, public u32 max_systolic, public u32 max_diastolic, public u32 max_heart_rate, public u32 max_temp) {
+    
+    // Verify age is within acceptable range
+    assert(age >= min_age);
+    assert(age <= max_age);
+    
+    // Verify blood pressure is within safe range
+    assert(systolic <= max_systolic);
+    assert(diastolic <= max_diastolic);
+    
+    // Verify heart rate is within safe range
+    assert(heart_rate <= max_heart_rate);
+    
+    // Verify temperature is within safe range
+    assert(temp <= max_temp);
+    
+    return;
+}

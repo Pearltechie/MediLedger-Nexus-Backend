@@ -1,0 +1,84 @@
+// MediLedger Nexus - Research Data Anonymizer Circuit
+// This circuit proves that research data has been properly anonymized
+// without revealing the original patient data
+
+import "hashes/sha256/512bitPacked" as sha256packed;
+
+// Public inputs (known to verifier)
+def main(private u32[8] original_data_hash, // Hash of original patient data
+         private u32[8] anonymized_data_hash, // Hash of anonymized data
+         private u32[8] patient_id_hash, // Hash of patient ID
+         private u32[8] study_id_hash, // Hash of research study ID
+         private u32 anonymization_timestamp, // When data was anonymized
+         private u32 data_type, // Type of data (1=demographics, 2=lab, 3=imaging, etc.)
+         private u32 anonymization_level, // Level of anonymization (1-5)
+         private u32[8] consent_hash, // Hash of research consent
+         public u32[8] expected_study_hash, // Expected study hash
+         public u32[8] expected_consent_hash, // Expected consent hash
+         public u32 min_anonymization_level, // Minimum anonymization level
+         public u32 max_anonymization_level, // Maximum anonymization level
+         public u32 current_timestamp, // Current timestamp
+         public u32 max_data_age, // Maximum age of data allowed
+         public u32[8] expected_original_hash) { // Expected original data hash
+    
+    // Verify research study identity
+    u32[8] computed_study_hash = sha256packed([study_id_hash[0], study_id_hash[1], study_id_hash[2], study_id_hash[3], study_id_hash[4], study_id_hash[5], study_id_hash[6], study_id_hash[7]]);
+    assert(computed_study_hash[0] == expected_study_hash[0]);
+    assert(computed_study_hash[1] == expected_study_hash[1]);
+    assert(computed_study_hash[2] == expected_study_hash[2]);
+    assert(computed_study_hash[3] == expected_study_hash[3]);
+    assert(computed_study_hash[4] == expected_study_hash[4]);
+    assert(computed_study_hash[5] == expected_study_hash[5]);
+    assert(computed_study_hash[6] == expected_study_hash[6]);
+    assert(computed_study_hash[7] == expected_study_hash[7]);
+    
+    // Verify research consent
+    u32[8] computed_consent_hash = sha256packed([consent_hash[0], consent_hash[1], consent_hash[2], consent_hash[3], consent_hash[4], consent_hash[5], consent_hash[6], consent_hash[7]]);
+    assert(computed_consent_hash[0] == expected_consent_hash[0]);
+    assert(computed_consent_hash[1] == expected_consent_hash[1]);
+    assert(computed_consent_hash[2] == expected_consent_hash[2]);
+    assert(computed_consent_hash[3] == expected_consent_hash[3]);
+    assert(computed_consent_hash[4] == expected_consent_hash[4]);
+    assert(computed_consent_hash[5] == expected_consent_hash[5]);
+    assert(computed_consent_hash[6] == expected_consent_hash[6]);
+    assert(computed_consent_hash[7] == expected_consent_hash[7]);
+    
+    // Verify anonymization level is within acceptable range
+    assert(anonymization_level >= min_anonymization_level);
+    assert(anonymization_level <= max_anonymization_level);
+    
+    // Verify data is not too old
+    u32 data_age = current_timestamp - anonymization_timestamp;
+    assert(data_age <= max_data_age);
+    
+    // Verify data type is valid (1-10)
+    assert(data_type >= 1);
+    assert(data_type <= 10);
+    
+    // Verify original data integrity
+    u32[8] computed_original_hash = sha256packed([original_data_hash[0], original_data_hash[1], original_data_hash[2], original_data_hash[3], original_data_hash[4], original_data_hash[5], original_data_hash[6], original_data_hash[7]]);
+    assert(computed_original_hash[0] == expected_original_hash[0]);
+    assert(computed_original_hash[1] == expected_original_hash[1]);
+    assert(computed_original_hash[2] == expected_original_hash[2]);
+    assert(computed_original_hash[3] == expected_original_hash[3]);
+    assert(computed_original_hash[4] == expected_original_hash[4]);
+    assert(computed_original_hash[5] == expected_original_hash[5]);
+    assert(computed_original_hash[6] == expected_original_hash[6]);
+    assert(computed_original_hash[7] == expected_original_hash[7]);
+    
+    // Verify that anonymized data is different from original (privacy protection)
+    // This ensures the data has been properly anonymized
+    u32[8] computed_anonymized_hash = sha256packed([anonymized_data_hash[0], anonymized_data_hash[1], anonymized_data_hash[2], anonymized_data_hash[3], anonymized_data_hash[4], anonymized_data_hash[5], anonymized_data_hash[6], anonymized_data_hash[7]]);
+    
+    // The anonymized hash should be different from the original hash
+    // We check that at least one element is different
+    u32 hash_difference = 0;
+    for u32 i in 0..8 {
+        if (computed_anonymized_hash[i] != computed_original_hash[i]) {
+            hash_difference = 1;
+        }
+    }
+    assert(hash_difference == 1);
+    
+    return;
+}

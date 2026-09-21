@@ -1,0 +1,6 @@
+// Basic test circuit
+def main(private u32 secret, public u32 public_value) {
+    assert(secret > 0);
+    assert(public_value > 0);
+    return;
+}

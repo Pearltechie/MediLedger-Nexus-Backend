@@ -1,0 +1,69 @@
+// MediLedger Nexus - Consent Proof Circuit
+// This circuit proves that a patient has given valid consent for data sharing
+// without revealing the specific consent details
+
+import "hashes/sha256/512bitPacked" as sha256packed;
+
+// Public inputs (known to verifier)
+def main(private u32[8] consent_hash, // Hash of the consent document
+         private u32[8] patient_id_hash, // Hash of patient ID
+         private u32[8] provider_id_hash, // Hash of provider ID
+         private u32 consent_timestamp, // When consent was given
+         private u32 expiration_timestamp, // When consent expires
+         private u32 data_types_consented, // Bitfield of consented data types
+         private u32[8] signature_hash, // Hash of patient signature
+         public u32 current_timestamp, // Current timestamp
+         public u32[8] expected_patient_hash, // Expected patient hash
+         public u32[8] expected_provider_hash, // Expected provider hash
+         public u32 min_consent_duration, // Minimum consent duration
+         public u32 max_consent_duration, // Maximum consent duration
+         public u32 required_data_types, // Required data types for this operation
+         public u32[8] expected_consent_hash) { // Expected consent hash
+    
+    // Verify patient identity
+    u32[8] computed_patient_hash = sha256packed([patient_id_hash[0], patient_id_hash[1], patient_id_hash[2], patient_id_hash[3], patient_id_hash[4], patient_id_hash[5], patient_id_hash[6], patient_id_hash[7]]);
+    assert(computed_patient_hash[0] == expected_patient_hash[0]);
+    assert(computed_patient_hash[1] == expected_patient_hash[1]);
+    assert(computed_patient_hash[2] == expected_patient_hash[2]);
+    assert(computed_patient_hash[3] == expected_patient_hash[3]);
+    assert(computed_patient_hash[4] == expected_patient_hash[4]);
+    assert(computed_patient_hash[5] == expected_patient_hash[5]);
+    assert(computed_patient_hash[6] == expected_patient_hash[6]);
+    assert(computed_patient_hash[7] == expected_patient_hash[7]);
+    
+    // Verify provider identity
+    u32[8] computed_provider_hash = sha256packed([provider_id_hash[0], provider_id_hash[1], provider_id_hash[2], provider_id_hash[3], provider_id_hash[4], provider_id_hash[5], provider_id_hash[6], provider_id_hash[7]]);
+    assert(computed_provider_hash[0] == expected_provider_hash[0]);
+    assert(computed_provider_hash[1] == expected_provider_hash[1]);
+    assert(computed_provider_hash[2] == expected_provider_hash[2]);
+    assert(computed_provider_hash[3] == expected_provider_hash[3]);
+    assert(computed_provider_hash[4] == expected_provider_hash[4]);
+    assert(computed_provider_hash[5] == expected_provider_hash[5]);
+    assert(computed_provider_hash[6] == expected_provider_hash[6]);
+    assert(computed_provider_hash[7] == expected_provider_hash[7]);
+    
+    // Verify consent is not expired
+    assert(current_timestamp <= expiration_timestamp);
+    
+    // Verify consent duration is within acceptable range
+    u32 consent_duration = expiration_timestamp - consent_timestamp;
+    assert(consent_duration >= min_consent_duration);
+    assert(consent_duration <= max_consent_duration);
+    
+    // Verify required data types are consented to
+    u32 has_required_types = data_types_consented & required_data_types;
+    assert(has_required_types == required_data_types);
+    
+    // Verify consent document integrity
+    u32[8] computed_consent_hash = sha256packed([consent_timestamp, expiration_timestamp, data_types_consented, signature_hash[0], signature_hash[1], signature_hash[2], signature_hash[3], signature_hash[4]]);
+    assert(computed_consent_hash[0] == expected_consent_hash[0]);
+    assert(computed_consent_hash[1] == expected_consent_hash[1]);
+    assert(computed_consent_hash[2] == expected_consent_hash[2]);
+    assert(computed_consent_hash[3] == expected_consent_hash[3]);
+    assert(computed_consent_hash[4] == expected_consent_hash[4]);
+    assert(computed_consent_hash[5] == expected_consent_hash[5]);
+    assert(computed_consent_hash[6] == expected_consent_hash[6]);
+    assert(computed_consent_hash[7] == expected_consent_hash[7]);
+    
+    return;
+}

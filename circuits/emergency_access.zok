@@ -1,0 +1,82 @@
+// MediLedger Nexus - Emergency Access Circuit
+// This circuit proves that emergency access is legitimate without revealing patient details
+
+import "hashes/sha256/512bitPacked" as sha256packed;
+
+// Public inputs (known to verifier)
+def main(private u32[8] patient_id_hash, // Hash of patient ID
+         private u32[8] emergency_provider_hash, // Hash of emergency provider ID
+         private u32 emergency_timestamp, // When emergency access was requested
+         private u32 emergency_type, // Type of emergency (1=cardiac, 2=trauma, 3=stroke, etc.)
+         private u32 urgency_level, // Urgency level (1-5, 5 being most urgent)
+         private u32[8] location_hash, // Hash of emergency location
+         private u32[8] provider_credentials_hash, // Hash of provider credentials
+         public u32 current_timestamp, // Current timestamp
+         public u32[8] expected_patient_hash, // Expected patient hash
+         public u32[8] expected_provider_hash, // Expected provider hash
+         public u32 max_access_duration, // Maximum emergency access duration
+         public u32 min_urgency_level, // Minimum urgency level for access
+         public u32[8] expected_location_hash, // Expected location hash
+         public u32[8] expected_credentials_hash) { // Expected credentials hash
+    
+    // Verify patient identity
+    u32[8] computed_patient_hash = sha256packed([patient_id_hash[0], patient_id_hash[1], patient_id_hash[2], patient_id_hash[3], patient_id_hash[4], patient_id_hash[5], patient_id_hash[6], patient_id_hash[7]]);
+    assert(computed_patient_hash[0] == expected_patient_hash[0]);
+    assert(computed_patient_hash[1] == expected_patient_hash[1]);
+    assert(computed_patient_hash[2] == expected_patient_hash[2]);
+    assert(computed_patient_hash[3] == expected_patient_hash[3]);
+    assert(computed_patient_hash[4] == expected_patient_hash[4]);
+    assert(computed_patient_hash[5] == expected_patient_hash[5]);
+    assert(computed_patient_hash[6] == expected_patient_hash[6]);
+    assert(computed_patient_hash[7] == expected_patient_hash[7]);
+    
+    // Verify emergency provider identity
+    u32[8] computed_provider_hash = sha256packed([emergency_provider_hash[0], emergency_provider_hash[1], emergency_provider_hash[2], emergency_provider_hash[3], emergency_provider_hash[4], emergency_provider_hash[5], emergency_provider_hash[6], emergency_provider_hash[7]]);
+    assert(computed_provider_hash[0] == expected_provider_hash[0]);
+    assert(computed_provider_hash[1] == expected_provider_hash[1]);
+    assert(computed_provider_hash[2] == expected_provider_hash[2]);
+    assert(computed_provider_hash[3] == expected_provider_hash[3]);
+    assert(computed_provider_hash[4] == expected_provider_hash[4]);
+    assert(computed_provider_hash[5] == expected_provider_hash[5]);
+    assert(computed_provider_hash[6] == expected_provider_hash[6]);
+    assert(computed_provider_hash[7] == expected_provider_hash[7]);
+    
+    // Verify emergency is recent (within max access duration)
+    u32 time_since_emergency = current_timestamp - emergency_timestamp;
+    assert(time_since_emergency <= max_access_duration);
+    
+    // Verify urgency level meets minimum requirement
+    assert(urgency_level >= min_urgency_level);
+    
+    // Verify emergency type is valid (1-10)
+    assert(emergency_type >= 1);
+    assert(emergency_type <= 10);
+    
+    // Verify urgency level is valid (1-5)
+    assert(urgency_level >= 1);
+    assert(urgency_level <= 5);
+    
+    // Verify location
+    u32[8] computed_location_hash = sha256packed([location_hash[0], location_hash[1], location_hash[2], location_hash[3], location_hash[4], location_hash[5], location_hash[6], location_hash[7]]);
+    assert(computed_location_hash[0] == expected_location_hash[0]);
+    assert(computed_location_hash[1] == expected_location_hash[1]);
+    assert(computed_location_hash[2] == expected_location_hash[2]);
+    assert(computed_location_hash[3] == expected_location_hash[3]);
+    assert(computed_location_hash[4] == expected_location_hash[4]);
+    assert(computed_location_hash[5] == expected_location_hash[5]);
+    assert(computed_location_hash[6] == expected_location_hash[6]);
+    assert(computed_location_hash[7] == expected_location_hash[7]);
+    
+    // Verify provider credentials
+    u32[8] computed_credentials_hash = sha256packed([provider_credentials_hash[0], provider_credentials_hash[1], provider_credentials_hash[2], provider_credentials_hash[3], provider_credentials_hash[4], provider_credentials_hash[5], provider_credentials_hash[6], provider_credentials_hash[7]]);
+    assert(computed_credentials_hash[0] == expected_credentials_hash[0]);
+    assert(computed_credentials_hash[1] == expected_credentials_hash[1]);
+    assert(computed_credentials_hash[2] == expected_credentials_hash[2]);
+    assert(computed_credentials_hash[3] == expected_credentials_hash[3]);
+    assert(computed_credentials_hash[4] == expected_credentials_hash[4]);
+    assert(computed_credentials_hash[5] == expected_credentials_hash[5]);
+    assert(computed_credentials_hash[6] == expected_credentials_hash[6]);
+    assert(computed_credentials_hash[7] == expected_credentials_hash[7]);
+    
+    return;
+}

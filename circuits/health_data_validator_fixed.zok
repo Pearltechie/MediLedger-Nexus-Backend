@@ -1,0 +1,44 @@
+// Health Data Validator Circuit - Fixed Version
+// This circuit proves that health data is within safe ranges without revealing actual values
+
+def main(private u32 age,
+         private u32 blood_pressure_systolic,
+         private u32 blood_pressure_diastolic,
+         private u32 heart_rate,
+         private u32 temperature,
+         private u32 patient_id_hash,
+         private u32 data_timestamp,
+         public u32 min_age,
+         public u32 max_age,
+         public u32 max_systolic,
+         public u32 max_diastolic,
+         public u32 max_heart_rate,
+         public u32 max_temperature,
+         public u32 expected_patient_hash,
+         public u32 current_timestamp) {
+    
+    // Verify patient identity (simplified hash check)
+    assert(patient_id_hash == expected_patient_hash);
+    
+    // Verify data is recent (within 24 hours)
+    u32 max_age_hours = 24;
+    u32 max_age_seconds = max_age_hours * 3600;
+    u32 data_age = current_timestamp - data_timestamp;
+    assert(data_age <= max_age_seconds);
+    
+    // Verify age is within acceptable range
+    assert(age >= min_age);
+    assert(age <= max_age);
+    
+    // Verify blood pressure is within safe range
+    assert(blood_pressure_systolic <= max_systolic);
+    assert(blood_pressure_diastolic <= max_diastolic);
+    
+    // Verify heart rate is within safe range
+    assert(heart_rate <= max_heart_rate);
+    
+    // Verify temperature is within safe range (in tenths of degree)
+    assert(temperature <= max_temperature);
+    
+    return;
+}

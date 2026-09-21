@@ -1,0 +1,72 @@
+// MediLedger Nexus - Health Data Validator Circuit
+// This circuit proves that health data meets certain criteria without revealing the actual data
+
+import "hashes/sha256/512bitPacked" as sha256packed;
+
+// Public inputs (known to verifier)
+def main(private u32[8] data_hash,
+         private u32[8] patient_id_hash,
+         private u32 age,
+         private u32 blood_pressure_systolic,
+         private u32 blood_pressure_diastolic,
+         private u32 heart_rate,
+         private u32 temperature,
+         private u32[8] timestamp_hash,
+         public u32 min_age,
+         public u32 max_age,
+         public u32 max_systolic,
+         public u32 max_diastolic,
+         public u32 max_heart_rate,
+         public u32 max_temperature,
+         public u32[8] expected_patient_hash,
+         public u32[8] expected_timestamp_hash) {
+    
+    // Verify patient identity
+    u32[8] computed_patient_hash = sha256packed([patient_id_hash[0], patient_id_hash[1], patient_id_hash[2], patient_id_hash[3], patient_id_hash[4], patient_id_hash[5], patient_id_hash[6], patient_id_hash[7]]);
+    assert(computed_patient_hash[0] == expected_patient_hash[0]);
+    assert(computed_patient_hash[1] == expected_patient_hash[1]);
+    assert(computed_patient_hash[2] == expected_patient_hash[2]);
+    assert(computed_patient_hash[3] == expected_patient_hash[3]);
+    assert(computed_patient_hash[4] == expected_patient_hash[4]);
+    assert(computed_patient_hash[5] == expected_patient_hash[5]);
+    assert(computed_patient_hash[6] == expected_patient_hash[6]);
+    assert(computed_patient_hash[7] == expected_patient_hash[7]);
+    
+    // Verify timestamp
+    u32[8] computed_timestamp_hash = sha256packed([timestamp_hash[0], timestamp_hash[1], timestamp_hash[2], timestamp_hash[3], timestamp_hash[4], timestamp_hash[5], timestamp_hash[6], timestamp_hash[7]]);
+    assert(computed_timestamp_hash[0] == expected_timestamp_hash[0]);
+    assert(computed_timestamp_hash[1] == expected_timestamp_hash[1]);
+    assert(computed_timestamp_hash[2] == expected_timestamp_hash[2]);
+    assert(computed_timestamp_hash[3] == expected_timestamp_hash[3]);
+    assert(computed_timestamp_hash[4] == expected_timestamp_hash[4]);
+    assert(computed_timestamp_hash[5] == expected_timestamp_hash[5]);
+    assert(computed_timestamp_hash[6] == expected_timestamp_hash[6]);
+    assert(computed_timestamp_hash[7] == expected_timestamp_hash[7]);
+    
+    // Verify age is within acceptable range
+    assert(age >= min_age);
+    assert(age <= max_age);
+    
+    // Verify blood pressure is within safe range
+    assert(blood_pressure_systolic <= max_systolic);
+    assert(blood_pressure_diastolic <= max_diastolic);
+    
+    // Verify heart rate is within safe range
+    assert(heart_rate <= max_heart_rate);
+    
+    // Verify temperature is within safe range
+    assert(temperature <= max_temperature);
+    
+    // Verify data integrity by checking hash
+    u32[8] computed_data_hash = sha256packed([age, blood_pressure_systolic, blood_pressure_diastolic, heart_rate, temperature, 0, 0, 0]);
+    assert(computed_data_hash[0] == data_hash[0]);
+    assert(computed_data_hash[1] == data_hash[1]);
+    assert(computed_data_hash[2] == data_hash[2]);
+    assert(computed_data_hash[3] == data_hash[3]);
+    assert(computed_data_hash[4] == data_hash[4]);
+    assert(computed_data_hash[5] == data_hash[5]);
+    assert(computed_data_hash[6] == data_hash[6]);
+    assert(computed_data_hash[7] == data_hash[7]);
+    
+    return;
+}
