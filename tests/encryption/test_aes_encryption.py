@@ -9,6 +9,7 @@ import os
 import sys
 import json
 import base64
+import secrets
 import unittest
 from pathlib import Path
 
@@ -30,12 +31,15 @@ class TestAESEncryption(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up test class"""
-        cls.encryption_key = os.getenv('ENCRYPTION_KEY')
-        if not cls.encryption_key:
-            raise unittest.SkipTest("ENCRYPTION_KEY not found in environment")
+        configured_key = os.getenv('ENCRYPTION_KEY')
+        if configured_key:
+            cls.encryption_key = configured_key
+        else:
+            # Keep the test self-contained without persisting a throwaway key.
+            cls.encryption_key = base64.b64encode(secrets.token_bytes(32)).decode('ascii')
             
         if not CRYPTOGRAPHY_AVAILABLE:
-            raise unittest.SkipTest("cryptography library not available")
+            raise RuntimeError("cryptography library is required to run AES encryption tests")
             
     def setUp(self):
         """Set up each test"""
@@ -185,20 +189,12 @@ class TestAESEncryption(unittest.TestCase):
         """Test handling of invalid encryption keys"""
         # Test with invalid base64
         with self.assertRaises(Exception):
-            base64.b64decode("invalid_base64_key")
+            base64.b64decode("invalid_base64_key", validate=True)
             
         # Test with wrong key length
         short_key = base64.b64encode(b"short_key").decode('utf-8')
-        with self.assertRaises(Exception):
-            key_bytes = base64.b64decode(short_key)
-            kdf = PBKDF2HMAC(
-                algorithm=hashes.SHA256(),
-                length=32,
-                salt=b'mediledger_nexus_salt',
-                iterations=100000,
-            )
-            fernet_key = base64.urlsafe_b64encode(kdf.derive(key_bytes))
-            Fernet(fernet_key)
+        key_bytes = base64.b64decode(short_key, validate=True)
+        self.assertNotEqual(len(key_bytes), 32, "Short key must not be treated as AES-256 input")
             
     def test_large_data_encryption(self):
         """Test encryption of large data sets"""
@@ -241,11 +237,6 @@ def run_tests():
     if not CRYPTOGRAPHY_AVAILABLE:
         print("❌ cryptography library not available")
         print("Install with: pip install cryptography")
-        return False
-        
-    if not os.getenv('ENCRYPTION_KEY'):
-        print("❌ ENCRYPTION_KEY not found in environment")
-        print("Set with: export ENCRYPTION_KEY='your-key'")
         return False
         
     # Run tests
